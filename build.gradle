@@ -1,0 +1,64 @@
+
+plugins {
+  id "java"
+  id "application"
+  id 'org.graalvm.buildtools.native' version '0.10.6'
+}
+repositories {
+  mavenCentral()
+}
+application {
+    mainClass.set("com.hokusai.Main")
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+var graalVMVersion = "24.0.1";
+
+dependencies {
+    implementation "org.graalvm.polyglot:polyglot:$graalVMVersion"
+    implementation "org.graalvm.polyglot:ruby-community:$graalVMVersion"
+    implementation "org.apache.commons:commons-io:1.3.2"
+    implementation("net.java.dev.jna:jna:5.17.0")
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDirs "src/main/resources"
+        }
+    }
+}
+
+jar {
+    duplicatesStrategy(DuplicatesStrategy.INCLUDE)
+    manifest {
+        attributes (
+            'Main-Class': 'com.hokusai.Main'
+        )
+    }
+}
+
+graalvmNative {
+    useArgFile = false
+    binaries.all {
+        // common options
+        verbose = true
+    }
+
+    binaries.main {
+        // options to configure the main binary
+        imageName = 'hokusai-native'
+        mainClass = 'com.hokusai.Main'
+        sharedLibrary = false
+        buildArgs.add('-O3') // enables additional compiler optimizations
+    }
+
+    binaries.test {
+        // options to configure the test binary
+        quickBuild = true
+        debug = true
+    }
+}
