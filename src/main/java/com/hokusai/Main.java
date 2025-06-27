@@ -12,53 +12,71 @@ import java.nio.file.Paths;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
-import org.apache.commons.io.IOUtils;
 
-import net.java.dev.jna.Library;
-import net.java.dev.jna.Native;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
-interface CLibrary extends Library {
-    public int chmod(String path, int mode);
-}
+import com.hokusai.commands.*;
+import com.hokusai.ZipUtils;
+
+import com.hokusai.Backend;
+import java.util.function.Consumer;
+
 
 public class Main {
-  private static CLibrary libc = (CLibrary) Native.loadLibrary("c", CLibrary.class);
-
   public static void main(String[] args) {
-    try {
+    try 
+    {
+
       InputStream input = Thread.currentThread()
         .getContextClassLoader()
         .getResourceAsStream("ruby.zip");
-
-      String tmpDir = "."; //System.getProperty("java.io.tmpdir"); 
+     
+      System.out.println("Unpacking ruby");
+      
+      String tmpDir = System.getProperty("java.io.tmpdir"); 
       File targetFile = new File("ruby.moved.zip");
-      Path targetPath = Paths.get(tmpDir, targetFile.toPath().toString());
+      Path targetPath = Paths.get(tmpDir, "truffleruby");
+      ZipUtils.unzip(input, new File(tmpDir));
+      
+      System.out.println("Done");
 
-      Files.copy(
-        input,
-        targetPath,
-        StandardCopyOption.REPLACE_EXISTING
-      );
+      Runtime.getRuntime().exec("chmod 775 " + targetPath.toString());
 
-      libc.chmod(targetPath.toString(), 0755);
-
-      IOUtils.closeQuietly(input);
-
-      java.nio.file.FileSystem nioFs = FileSystems.newFileSystem(targetPath);
-
-      IOAccess io = IOAccess.newBuilder()
-        .fileSystem(FileSystem.newFileSystem(nioFs))
-        .build();
-
+      input.close();
+      System.setProperty("ruby.home", targetPath.toString());
+      System.setProperty("org.graalvm.language.ruby.home", targetPath.toString());
       Context polyglot = Context.newBuilder("ruby")
-        .allowIO(io)
         .allowAllAccess(true)
         .allowNativeAccess(true)
         .build();
-      String name = polyglot.eval("ruby", "require 'hokusai'").asString();
 
-      System.out.println("Hello World " + "I mean " + name);
-    } catch(IOException e) {
+      Backend backend = new Backend(polyglot);
+      polyglot.eval("ruby", "require \"hokusai\"");
+      backend.setOnDrawCircle((Consumer<CircleCommandWrapper>) command -> System.out.println("Draw circle: " + command.radius()));
+      backend.setOnDrawRect((Consumer<RectCommandWrapper>) command -> System.out.println(String.format("Draw rect: [%f, %f, %f, %f]", command.x(), command.y(), command.width(), command.height())));
+      backend.setupHokusaiCallbacks();
+
+      String app = """
+      class App < Hokusai::Block
+        template <<~EOF
+        [template]
+          vblock
+            vblock { :height="100.0" }
+              circle { :radius="43.0" }
+            vblock
+              circle { :radius="20.0"}
+            
+        EOF
+
+        uses(vblock: Hokusai::Blocks::Vblock, circle: Hokusai::Blocks::Circle)
+      end
+
+      App
+      """;
+
+      backend.run(app);
+    } catch(Exception e) {
       System.out.println(e.toString());
     }
   }
