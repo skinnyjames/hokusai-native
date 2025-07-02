@@ -1,0 +1,11 @@
+[
+    { "interfaces": ["com.hokusai.interfaces.RectCommand"] },
+    { "interfaces": ["com.hokusai.interfaces.CircleCommand"] },
+    { "interfaces": ["com.hokusai.interfaces.ScissorBeginCommand"] },
+    { "interfaces": ["com.hokusai.interfaces.ScissorEndCommand"] },
+    { "interfaces": ["com.hokusai.interfaces.TextCommand"] },
+    { "interfaces": ["com.hokusai.interfaces.ImageCommand"] },
+    { "interfaces": ["com.hokusai.interfaces.Color"] },
+    { "interfaces": ["com.hokusai.interfaces.Outline"] },
+    { "interfaces": ["com.hokusai.interfaces.Padding"] }
+]

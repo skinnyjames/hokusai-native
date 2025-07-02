@@ -1,0 +1,81 @@
+
+plugins {
+  id "java"
+  id "application"
+  id 'org.graalvm.buildtools.native' version '0.10.6'
+}
+
+repositories {
+  mavenCentral()
+}
+application {
+    mainClass.set("com.hokusai.Main")
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+var graalVMVersion = "24.0.1";
+
+dependencies {
+    implementation "org.graalvm.polyglot:polyglot:$graalVMVersion"
+    implementation "org.graalvm.polyglot:ruby-community:$graalVMVersion"
+}
+
+// sourceSets {
+//     main {
+//         resources {
+//             srcDirs "src/main/resources"
+//         }
+//     }
+// }
+
+jar {
+    duplicatesStrategy(DuplicatesStrategy.INCLUDE)
+    manifest {
+        attributes (
+            'Main-Class': 'com.hokusai.Main'
+        )
+    }
+}
+
+task fatJar(type: Jar) {
+    duplicatesStrategy(DuplicatesStrategy.INCLUDE)
+
+    manifest {
+        attributes 'Main-Class': "com.hokusai.Main"
+    }
+    archiveBaseName = "${rootProject.name}"
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+graalvmNative {
+    useArgFile = false
+    binaries.all {
+        // common options
+        verbose = true
+    }
+
+    binaries.main {
+        // options to configure the main binary
+        imageName = 'hokusai-native'
+        mainClass = 'com.hokusai.Main'
+        sharedLibrary = true
+        buildArgs.add('-O3') // enables additional compiler optimizations
+        buildArgs.add('-D:java.home=../graalvm/Content/Home')
+        buildArgs.add('-Dhokusai.ext=include/hokusai-native-ext.h')
+        buildArgs.add('-H:IncludeResources=src/main/resources')
+        buildArgs.add('-H:IncludeResources=META-INF')
+        buildArgs.add('-H:JNIConfigurationFiles=META-INF/native-image/jni-config.json')
+        buildArgs.add('-H:DynamicProxyConfigurationFiles=/META-INF/native-image/proxy-config.json')
+        buildArgs.add('-H:ReflectionConfigurationFiles=META-INF/native-image/reflect-config.json')
+    }   
+
+    binaries.test {
+        // options to configure the test binary
+        quickBuild = true
+        debug = true
+    }
+}

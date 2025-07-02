@@ -1,0 +1,30 @@
+[
+    { "name": "com.hokusai.interfaces.Color", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.Outline", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.Padding", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.Command", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.RectCommand", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.CircleCommand", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ImageCommand", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.TextCommand", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ScissorBeginCommand", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ScissorEndCommand", "allPublicMethods": true, "allPublicConstructors": true },
+
+    { "name": "com.hokusai.commands.CommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.commands.CircleCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.commands.ScissorBeginCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.commands.ScissorEndCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.commands.RectCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.commands.TextCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.commands.ImageCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
+
+    { "name": "com.hokusai.interfaces.ext.CircleWrapper", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeBoundary", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeCircleCommand", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeRectCommand", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeColor", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeCircleCommandCallback", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeRectCommandCallback", "allPublicMethods": true, "allPublicConstructors": true },
+
+    { "name": "java.util.function.Consumer", "allPublicMethods": true, "allPublicConstructors": true }
+]
