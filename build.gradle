@@ -31,25 +31,6 @@ dependencies {
 //     }
 // }
 
-jar {
-    duplicatesStrategy(DuplicatesStrategy.INCLUDE)
-    manifest {
-        attributes (
-            'Main-Class': 'com.hokusai.Main'
-        )
-    }
-}
-
-task fatJar(type: Jar) {
-    duplicatesStrategy(DuplicatesStrategy.INCLUDE)
-
-    manifest {
-        attributes 'Main-Class': "com.hokusai.Main"
-    }
-    archiveBaseName = "${rootProject.name}"
-    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
-}
 
 graalvmNative {
     useArgFile = false
@@ -64,14 +45,13 @@ graalvmNative {
         mainClass = 'com.hokusai.Main'
         sharedLibrary = true
         buildArgs.add('-O3') // enables additional compiler optimizations
-        buildArgs.add('-D:java.home=../graalvm/Content/Home')
-        buildArgs.add('-Dhokusai.ext=include/hokusai-native-ext.h')
-        buildArgs.add('-H:IncludeResources=src/main/resources')
+        // buildArgs.add("-D:java.home=${projectDir}/../graalvm/Content/Home")
+        buildArgs.add("-Dhokusai.ext=${projectDir}/include/hokusai-native-ext.h")
         buildArgs.add('-H:IncludeResources=META-INF')
-        buildArgs.add('-H:JNIConfigurationFiles=META-INF/native-image/jni-config.json')
-        buildArgs.add('-H:DynamicProxyConfigurationFiles=/META-INF/native-image/proxy-config.json')
-        buildArgs.add('-H:ReflectionConfigurationFiles=META-INF/native-image/reflect-config.json')
+        buildArgs.add("-H:DynamicProxyConfigurationFiles=${projectDir}/META-INF/native-image/proxy-config.json")
+        buildArgs.add("-H:ReflectionConfigurationFiles=${projectDir}/META-INF/native-image/reflect-config.json")
     }   
+
 
     binaries.test {
         // options to configure the test binary

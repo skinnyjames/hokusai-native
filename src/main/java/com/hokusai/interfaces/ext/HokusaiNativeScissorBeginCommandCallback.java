@@ -4,7 +4,7 @@ import org.graalvm.nativeimage.c.function.CFunctionPointer;
 import org.graalvm.nativeimage.c.function.InvokeCFunctionPointer;
 import org.graalvm.nativeimage.c.type.VoidPointer;
 
-public interface HokusaiNativeRectCommandCallback extends CFunctionPointer {
+public interface HokusaiNativeScissorBeginCommandCallback extends CFunctionPointer {
     @InvokeCFunctionPointer
-    VoidPointer call(HokusaiNativeRectCommand command);
+    VoidPointer call(HokusaiNativeScissorBeginCommand command);
 }

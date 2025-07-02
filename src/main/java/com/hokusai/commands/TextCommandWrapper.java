@@ -18,7 +18,7 @@ public class TextCommandWrapper extends CommandWrapper {
     return this.raw.as(TextCommand.class).y();
   }
 
-  public double size() {
+  public int size() {
     return this.raw.as(TextCommand.class).size();
   }
 
@@ -44,5 +44,9 @@ public class TextCommandWrapper extends CommandWrapper {
 
   public Boolean italic() {
     return this.raw.as(TextCommand.class).italic();
+  }
+
+  public Padding padding() {
+    return this.raw.as(TextCommand.class).padding();
   }
 }
