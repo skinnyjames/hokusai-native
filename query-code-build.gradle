@@ -48,7 +48,10 @@ graalvmNative {
         buildArgs.add("-H:-CheckToolchain")
 
         buildArgs.add("-H:CAPCacheDir=${projectDir}/build-resources/cap")
-        buildArgs.add("-H:+UseCAPCache")
+        buildArgs.add("-H:-UseCAPCache")
+
+        buildArgs.add("-H:+ExitAfterQueryCodeGeneration")
+        buildArgs.add("-H:QueryCodeDir=${projectDir}/build-resources/query")
         buildArgs.add("-H:+QueryIfNotInCAPCache")
     }
 
