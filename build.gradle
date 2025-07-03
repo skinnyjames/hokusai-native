@@ -51,8 +51,9 @@ graalvmNative {
         buildArgs.add("-H:DynamicProxyConfigurationFiles=${projectDir}/META-INF/native-image/proxy-config.json")
         buildArgs.add("-H:ReflectionConfigurationFiles=${projectDir}/META-INF/native-image/reflect-config.json")
         // buildArgs.add("-H:+ExitAfterRelocatableImageWrite")
-        // buildArgs.add("--native-compiler-path=${System.getenv("HOKUSAI_NATIVE_CLANG")}")
-        // buildArgs.add("-H:-CheckToolchain")
+        buildArgs.add("--native-compiler-path=${System.getenv("HOKUSAI_NATIVE_CLANG")}")
+        buildArgs.add("-H:-CheckToolchain")
+        buildArgs.add("-H:-UseCAPCache")
     }
 
 
