@@ -47,10 +47,13 @@ graalvmNative {
         buildArgs.add('-O3') // enables additional compiler optimizations
         // buildArgs.add("-D:java.home=${projectDir}/../graalvm/Content/Home")
         buildArgs.add("-Dhokusai.ext=${projectDir}/include/hokusai-native-ext.h")
+        buildArgs.add("-Dsvm.targetName=android")
+        buildArgs.add("-Dsvm.targetArch=arm64")
+        buildArgs.add("-Dsvm.platform=org.graalvm.nativeimage.Platform\$ANDROID_AARCH64")
         buildArgs.add('-H:IncludeResources=META-INF')
         buildArgs.add("-H:DynamicProxyConfigurationFiles=${projectDir}/META-INF/native-image/proxy-config.json")
         buildArgs.add("-H:ReflectionConfigurationFiles=${projectDir}/META-INF/native-image/reflect-config.json")
-        buildArgs.add("--native-compiler-path=${System.getenv("HOKUSAI_NATIVE_CLANG")}")
+        // buildArgs.add("--native-compiler-path=${System.getenv("HOKUSAI_NATIVE_CLANG")}")
         buildArgs.add("-H:-CheckToolchain")
     }
 
