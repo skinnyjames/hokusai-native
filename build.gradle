@@ -42,7 +42,6 @@ graalvmNative {
         // buildArgs.add("-Dsvm.targetArch=arm64")
         // buildArgs.add("-Dsvm.platform=org.graalvm.nativeimage.Platform\$ANDROID_AARCH64")
         buildArgs.add("-H:+ExitAfterRelocatableImageWrite")
-        buildArgs.add("-H:+UseOnlyWritableBootImageHeap")
         buildArgs.add('-H:IncludeResources=META-INF')
         buildArgs.add("-H:TempDirectory=${projectDir}/tmp")
 
