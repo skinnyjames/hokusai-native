@@ -142,13 +142,7 @@ public class Backend {
 
     System.out.println("setup input");
     input = polyglot.eval("ruby", """
-        ptr = FFI::MemoryPointer.new :pointer
-        LibHokusai.hoku_input_init(ptr)
-        raw = LibHokusai::HmlInput.new(ptr.get_pointer(0))
-        input = Hokusai::Input.new(raw)
-        ptr.free
-
-        input
+      Hokusai::Input.new
     """);
   }
 

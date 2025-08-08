@@ -2,7 +2,7 @@
 plugins {
   id "java"
   id "application"
-  id 'org.graalvm.buildtools.native' version '0.10.6'
+  id 'org.graalvm.buildtools.native' version '0.9.16'
 }
 
 repositories {
@@ -33,26 +33,14 @@ graalvmNative {
         imageName = 'libhokusai-native'
         mainClass = 'com.hokusai.Main'
         sharedLibrary = true
-        
+
         buildArgs.add('-O3')
         buildArgs.add("-Dhokusai.ext=${projectDir}/include/hokusai-native-ext.h")
-        
-        // buildArgs.add('--libc=bionic')
-        // buildArgs.add("-Dsvm.targetName=android")
-        // buildArgs.add("-Dsvm.targetArch=arm64")
-        // buildArgs.add("-Dsvm.platform=org.graalvm.nativeimage.Platform\$ANDROID_AARCH64")
-        buildArgs.add("-H:+ExitAfterRelocatableImageWrite")
         buildArgs.add('-H:IncludeResources=META-INF')
         buildArgs.add("-H:TempDirectory=${projectDir}/tmp")
 
         buildArgs.add("-H:DynamicProxyConfigurationFiles=${projectDir}/META-INF/native-image/proxy-config.json")
         buildArgs.add("-H:ReflectionConfigurationFiles=${projectDir}/META-INF/native-image/reflect-config.json")
-        // buildArgs.add("--native-compiler-path=${System.getenv("HOKUSAI_NATIVE_CLANG")}")
-        // buildArgs.add("-H:-CheckToolchain")
-
-        // buildArgs.add("-H:CAPCacheDir=${projectDir}/build-resources/cap")
-        // buildArgs.add("-H:+UseCAPCache")
-        // buildArgs.add("-H:+QueryIfNotInCAPCache")
     }
 
     binaries.test {
