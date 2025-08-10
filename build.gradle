@@ -35,10 +35,11 @@ graalvmNative {
         sharedLibrary = true
 
         buildArgs.add('-O3')
+        buildArgs.add('--install-exit-handlers')
+        buildArgs.add("-R:+EnableSignalHandling")
         buildArgs.add("-Dhokusai.ext=${projectDir}/include/hokusai-native-ext.h")
         buildArgs.add('-H:IncludeResources=META-INF')
         buildArgs.add("-H:TempDirectory=${projectDir}/tmp")
-
         buildArgs.add("-H:DynamicProxyConfigurationFiles=${projectDir}/META-INF/native-image/proxy-config.json")
         buildArgs.add("-H:ReflectionConfigurationFiles=${projectDir}/META-INF/native-image/reflect-config.json")
     }

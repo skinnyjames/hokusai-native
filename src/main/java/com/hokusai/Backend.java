@@ -8,6 +8,7 @@ import org.graalvm.nativeimage.c.type.CCharPointer;
 import org.graalvm.word.Pointer;
 import org.graalvm.nativeimage.IsolateThread;
 
+import java.util.HashMap;
 import java.util.function.Consumer;
 import com.hokusai.commands.*;
 import com.hokusai.interfaces.ext.*;
@@ -22,6 +23,26 @@ public class Backend {
   public static HokusaiNativeImageCommandCallback onDrawImage;
   public static HokusaiNativeScissorBeginCommandCallback onDrawScissorBegin;
   public static HokusaiNativeScissorEndCommandCallback onDrawScissorEnd;
+  public static HashMap<String, Value> keySymbolMap = new HashMap<String, Value>();
+  public static keys = [
+    "null", "apostrophe", "comma", "minus", "period",
+    "slash", "zero", "one", "two", "three", "four",
+    "five", "six", "seven", "eight", "nine", "semicolon", 
+    "equal", "a", "b", "c", "d", "e", "f", "g", "h", 
+    "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", 
+    "s", "t", "u", "v", "w", "x", "y", "z", "left_bracket", 
+    "backslash", "right_bracket", "grave", "space", "escape", 
+    "enter", "tab", "backspace", "insert", "delete", "right", 
+    "left", "down", "up", "page_up", "page_down", "home", "end", 
+    "caps_lock", "scroll_lock", "num_lock", "print_screen", "pause", 
+    "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", 
+    "f9", "f10", "f11", "f12", "left_shift", "left_control", 
+    "left_alt", "left_super", "right_shift", "right_control", "right_alt", 
+    "right_super", "kb_menu", "kp_0", "kp_1", "kp_2", "kp_3", 
+    "kp_4", "kp_5", "kp_6", "kp_7", "kp_8", "kp_9", "kp_decimal", 
+    "kp_divide", "kp_multiply", "kp_subtract", "kp_add", "kp_enter", 
+    "kp_equal", "back", "menu", "volume_up", "volume_down"
+  ]
 
   @CEntryPoint(name = "onDrawRect")
   public static void onDrawRect(@CEntryPoint.IsolateThreadContext long isolate, HokusaiNativeRectCommandCallback callback) {
@@ -36,6 +57,51 @@ public class Backend {
         end
       end
     """).execute(block);
+  }
+
+  public static void populateKeys()
+  {
+    for (String key : keys) {
+      Value v = polyglot.eval("ruby", """
+        -> name do
+          name.to_sym
+        end
+      """).execute(key);
+
+      keySymbolMap.put(key, v);
+    }
+  }
+
+  @CEntryPoint(name = "processInput")
+  public static void processInput(@CEntryPoint.IsolateThreadContext long isolate, HokusaiNativeInput nativeInput) {
+    input.getMember("mouse").getMember("pos").putMember("x", nativeInput.mouse_x());
+    input.getMember("mouse").getMember("pos").putMember("y", nativeInput.mouse_y());
+    input.getMember("mouse").getMember("delta").putMember("x", nativeInput.delta_x());
+    input.getMember("mouse").getMember("delta").putMember("y", nativeInput.delta_y());
+    input.getMember("mouse").putMember("scroll", nativeInput.scroll());
+
+    input.getMember("mouse").getMember("left").putMember("clicked", nativeInput.left().clicked());
+    input.getMember("mouse").getMember("left").putMember("down", nativeInput.left().down());
+    input.getMember("mouse").getMember("left").putMember("released", nativeInput.left().released());
+    input.getMember("mouse").getMember("left").putMember("up", nativeInput.left().up());
+
+    input.getMember("mouse").getMember("middle").putMember("clicked", nativeInput.middle().clicked());
+    input.getMember("mouse").getMember("middle").putMember("down", nativeInput.middle().down());
+    input.getMember("mouse").getMember("middle").putMember("released", nativeInput.middle().released());
+    input.getMember("mouse").getMember("middle").putMember("up", nativeInput.middle().up());
+    
+    input.getMember("mouse").getMember("right").putMember("clicked", nativeInput.right().clicked());
+    input.getMember("mouse").getMember("right").putMember("down", nativeInput.right().down());
+    input.getMember("mouse").getMember("right").putMember("released", nativeInput.right().released());
+    input.getMember("mouse").getMember("right").putMember("up", nativeInput.right().up());
+
+    if (!input.getMember("keyboard_override").asBoolean()) {
+      input.getMember("keyboard").execute("reset")
+      for (int i = 0; i < HokusaiNativeKeyType.size - 1; i++) {
+        HokusaiNativeKey key = nativeInput.addressOfKey().read(i);
+        input.getMember("keyboard").execute("set", keySymbolMap.get(keys[i]), key.down());
+      }
+    }
   }
 
   @CEntryPoint(name = "onDrawCircle")
@@ -135,8 +201,6 @@ public class Backend {
 
     String app = CTypeConversion.toJavaString(code);
 
-    // String app = System.getenv("HOKUSAI_APP");
-
     System.out.println("app " + app);
     block = polyglot.eval("ruby", app);
 
@@ -144,6 +208,8 @@ public class Backend {
     input = polyglot.eval("ruby", """
       Hokusai::Input.new
     """);
+
+    populateKeys();
   }
 
   @CEntryPoint(name = "execute")

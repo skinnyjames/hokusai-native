@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "*.inc": "php",
+    "hokusai-native_dynamic.h": "c"
+  }
+}

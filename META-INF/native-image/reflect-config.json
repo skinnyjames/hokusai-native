@@ -21,6 +21,11 @@
     { "name": "com.hokusai.interfaces.ext.HokusaiNativeColor", "allPublicMethods": true, "allPublicConstructors": true },
     { "name": "com.hokusai.interfaces.ext.HokusaiNativeBoundary", "allPublicMethods": true, "allPublicConstructors": true },
     
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeKey", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeKeyType", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeMouse", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeInput", "allPublicMethods": true, "allPublicConstructors": true },
+
     { "name": "com.hokusai.interfaces.ext.HokusaiNativeCircleCommand", "allPublicMethods": true, "allPublicConstructors": true },
     { "name": "com.hokusai.interfaces.ext.HokusaiNativeCircleCommandCallback", "allPublicMethods": true, "allPublicConstructors": true },
     { "name": "com.hokusai.interfaces.ext.HokusaiNativeCircleCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
