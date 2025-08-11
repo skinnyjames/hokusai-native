@@ -8,6 +8,8 @@ import org.graalvm.nativeimage.c.struct.CField;
 @CContext(HokusaiHeaderDirectives.class)
 @CStruct("hokusai_native_key")
 public interface HokusaiNativeKey extends PointerBase {
-  @CField("key") HokusaiNativeKeyType key();
+  HokusaiNativeKey addressOf(int index);
+
+  @CField("key") int key();
   @CField("down") boolean down();
 }

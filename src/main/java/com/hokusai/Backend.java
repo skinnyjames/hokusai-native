@@ -24,7 +24,7 @@ public class Backend {
   public static HokusaiNativeScissorBeginCommandCallback onDrawScissorBegin;
   public static HokusaiNativeScissorEndCommandCallback onDrawScissorEnd;
   public static HashMap<String, Value> keySymbolMap = new HashMap<String, Value>();
-  public static keys = [
+  public static String[] keysList = {
     "null", "apostrophe", "comma", "minus", "period",
     "slash", "zero", "one", "two", "three", "four",
     "five", "six", "seven", "eight", "nine", "semicolon", 
@@ -42,7 +42,7 @@ public class Backend {
     "kp_4", "kp_5", "kp_6", "kp_7", "kp_8", "kp_9", "kp_decimal", 
     "kp_divide", "kp_multiply", "kp_subtract", "kp_add", "kp_enter", 
     "kp_equal", "back", "menu", "volume_up", "volume_down"
-  ]
+  };
 
   @CEntryPoint(name = "onDrawRect")
   public static void onDrawRect(@CEntryPoint.IsolateThreadContext long isolate, HokusaiNativeRectCommandCallback callback) {
@@ -61,7 +61,7 @@ public class Backend {
 
   public static void populateKeys()
   {
-    for (String key : keys) {
+    for (String key : keysList) {
       Value v = polyglot.eval("ruby", """
         -> name do
           name.to_sym
@@ -74,32 +74,33 @@ public class Backend {
 
   @CEntryPoint(name = "processInput")
   public static void processInput(@CEntryPoint.IsolateThreadContext long isolate, HokusaiNativeInput nativeInput) {
-    input.getMember("mouse").getMember("pos").putMember("x", nativeInput.mouse_x());
-    input.getMember("mouse").getMember("pos").putMember("y", nativeInput.mouse_y());
-    input.getMember("mouse").getMember("delta").putMember("x", nativeInput.delta_x());
-    input.getMember("mouse").getMember("delta").putMember("y", nativeInput.delta_y());
-    input.getMember("mouse").putMember("scroll", nativeInput.scroll());
+    input.getMember("mouse").execute().getMember("pos").execute().getMember("x=").execute(nativeInput.mouse_x());
+    input.getMember("mouse").execute().getMember("pos").execute().getMember("y=").execute(nativeInput.mouse_y());
+    input.getMember("mouse").execute().getMember("delta").execute().getMember("x=").execute(nativeInput.delta_x());
+    input.getMember("mouse").execute().getMember("delta").execute().getMember("y=").execute(nativeInput.delta_y());
+    input.getMember("mouse").execute().getMember("scroll=").execute(nativeInput.scroll());
 
-    input.getMember("mouse").getMember("left").putMember("clicked", nativeInput.left().clicked());
-    input.getMember("mouse").getMember("left").putMember("down", nativeInput.left().down());
-    input.getMember("mouse").getMember("left").putMember("released", nativeInput.left().released());
-    input.getMember("mouse").getMember("left").putMember("up", nativeInput.left().up());
+    input.getMember("mouse").execute().getMember("left").execute().getMember("clicked=").execute(nativeInput.left().clicked());
+    input.getMember("mouse").execute().getMember("left").execute().getMember("down=").execute(nativeInput.left().down());
+    input.getMember("mouse").execute().getMember("left").execute().getMember("released=").execute(nativeInput.left().released());
+    input.getMember("mouse").execute().getMember("left").execute().getMember("up=").execute(nativeInput.left().up());
 
-    input.getMember("mouse").getMember("middle").putMember("clicked", nativeInput.middle().clicked());
-    input.getMember("mouse").getMember("middle").putMember("down", nativeInput.middle().down());
-    input.getMember("mouse").getMember("middle").putMember("released", nativeInput.middle().released());
-    input.getMember("mouse").getMember("middle").putMember("up", nativeInput.middle().up());
+    input.getMember("mouse").execute().getMember("middle").execute().getMember("clicked=").execute(nativeInput.middle().clicked());
+    input.getMember("mouse").execute().getMember("middle").execute().getMember("down=").execute(nativeInput.middle().down());
+    input.getMember("mouse").execute().getMember("middle").execute().getMember("released=").execute(nativeInput.middle().released());
+    input.getMember("mouse").execute().getMember("middle").execute().getMember("up=").execute(nativeInput.middle().up());
     
-    input.getMember("mouse").getMember("right").putMember("clicked", nativeInput.right().clicked());
-    input.getMember("mouse").getMember("right").putMember("down", nativeInput.right().down());
-    input.getMember("mouse").getMember("right").putMember("released", nativeInput.right().released());
-    input.getMember("mouse").getMember("right").putMember("up", nativeInput.right().up());
+    input.getMember("mouse").execute().getMember("right").execute().getMember("clicked=").execute(nativeInput.right().clicked());
+    input.getMember("mouse").execute().getMember("right").execute().getMember("down=").execute(nativeInput.right().down());
+    input.getMember("mouse").execute().getMember("right").execute().getMember("released=").execute(nativeInput.right().released());
+    input.getMember("mouse").execute().getMember("right").execute().getMember("up=").execute(nativeInput.right().up());
 
-    if (!input.getMember("keyboard_override").asBoolean()) {
-      input.getMember("keyboard").execute("reset")
-      for (int i = 0; i < HokusaiNativeKeyType.size - 1; i++) {
-        HokusaiNativeKey key = nativeInput.addressOfKey().read(i);
-        input.getMember("keyboard").execute("set", keySymbolMap.get(keys[i]), key.down());
+    if (!input.getMember("keyboard_override").execute().asBoolean()) {
+      input.getMember("keyboard").execute().getMember("reset").executeVoid();
+      HokusaiNativeKey keys = nativeInput.keys();
+      for (int i = 0; i < 110; i++) {
+        HokusaiNativeKey key = keys.addressOf(i);
+        input.getMember("keyboard").execute().getMember("set").execute(keySymbolMap.get(keysList[i]), key.down());
       }
     }
   }
@@ -182,7 +183,6 @@ public class Backend {
   @CEntryPoint(name = "init")
   public static void init(@CEntryPoint.IsolateThreadContext long isolate, CCharPointer code) {
     System.out.println("In init");
-
     String home = System.getenv("HOKUSAI_RUBY_HOME");
 
     System.out.println("Home is " + home);

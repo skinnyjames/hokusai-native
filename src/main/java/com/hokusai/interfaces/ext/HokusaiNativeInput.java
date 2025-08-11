@@ -4,6 +4,7 @@ import org.graalvm.word.PointerBase;
 import org.graalvm.nativeimage.c.CContext;
 import org.graalvm.nativeimage.c.struct.CStruct;
 import org.graalvm.nativeimage.c.struct.CField;
+import org.graalvm.nativeimage.c.struct.CFieldAddress;
 
 @CContext(HokusaiHeaderDirectives.class)
 @CStruct("hokusai_native_input")
@@ -16,5 +17,5 @@ public interface HokusaiNativeInput extends PointerBase {
   @CField("delta_x") double delta_x();
   @CField("delta_y") double delta_y();
   @CField("scroll") double scroll();
-  @CFieldAddress("keys") HokusaiNativeKey addressOfKey();
+  @CFieldAddress("keys") HokusaiNativeKey keys();
 }

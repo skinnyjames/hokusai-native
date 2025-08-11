@@ -11,7 +11,7 @@ import org.graalvm.nativeimage.c.constant.CEnumValue;
 
 @CContext(HokusaiHeaderDirectives.class)
 @CEnum("hokusai_native_key_type")
-enum HokusaiNativeKeyType {
+public enum HokusaiNativeKeyType {
   HN_NULL,  HN_APOSTROPHE,  HN_COMMA,  HN_MINUS,  HN_PERIOD,
   HN_SLASH,  HN_ZERO,  HN_ONE,  HN_TWO,  HN_THREE,  HN_FOUR,
   HN_FIVE,  HN_SIX,  HN_SEVEN,  HN_EIGHT,  HN_NINE,  HN_SEMICOLON,  

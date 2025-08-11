@@ -88,7 +88,7 @@ typedef enum HokusaiNativeKeyType
 
 typedef struct HokusaiNativeKey
 {
-  hokusai_native_key_type key;
+  int key;
   bool down;
 } hokusai_native_key;
 
@@ -100,9 +100,9 @@ typedef struct HokusaiNativeMouse {
 } hokusai_native_mouse;
 
 typedef struct HokusaiNativeInput {
-  hokusai_native_mouse left;
-  hokusai_native_mouse middle;
-  hokusai_native_mouse right;
+  hokusai_native_mouse* left;
+  hokusai_native_mouse* middle;
+  hokusai_native_mouse* right;
   double mouse_x;
   double mouse_y;
   double delta_x;

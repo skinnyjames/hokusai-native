@@ -1,8 +1,8 @@
 #ifndef HOKUSAI_NATIVE
 #define HOKUSAI_NATIVE
 #include "graal_isolate.h"
-#include "libhokusai-native.h"
 #include "hokusai-native-ext.h"
+#include "libhokusai-native.h"
 #include "raylib.h"
 #include "hashmap.h"
 #include "string.h"
@@ -89,6 +89,43 @@ void on_draw_image(hokusai_native_image_command* command)
   DrawTexture(tex, command->x, command->y, WHITE);
 }
 
+static int keys[110] = {
+  0, 39, 44, 45, 46, 47, 48,
+  49, 50, 51, 52, 53, 54, 55, 56, 57, 59, 61,
+  65, 66, 67, 68, 69, 70, 71, 72, 73,
+  74, 75, 76, 77, 78, 79, 80, 81,
+  82, 83, 84, 85, 86, 87, 88, 89, 90, 91,
+  92, 93, 96, 32, 256, 257, 258, 259,
+  260, 261, 262, 263, 264, 265, 266,
+  267, 268, 269, 280, 281, 282, 283, 284,
+  290, 291, 292, 293, 294, 295, 296, 297,
+  298, 299, 300, 301, 340, 341, 342, 343,
+  344, 345, 346, 347, 348, 320, 321, 322, 323,
+  324, 325, 326, 327, 328, 329, 330, 331,
+  332, 333, 334, 335, 336, 4, 5, 24, 25
+};
+
+void process_input(long long int isolate)
+{
+  hokusai_native_input input;
+  for (int i=0; i<110; i++)
+  {
+    input.keys[i] = (hokusai_native_key){.key=i, .down=IsKeyPressed(keys[i]) };
+  }
+
+  input.left = &(hokusai_native_mouse){.clicked = IsMouseButtonPressed(0), .down=IsMouseButtonDown(0), .released=IsMouseButtonReleased(0), .up=IsMouseButtonUp(0) };
+  input.middle = &(hokusai_native_mouse){.clicked = IsMouseButtonPressed(1), .down=IsMouseButtonDown(1), .released=IsMouseButtonReleased(1), .up=IsMouseButtonUp(1) };
+  input.right = &(hokusai_native_mouse){.clicked = IsMouseButtonPressed(2), .down=IsMouseButtonDown(2), .released=IsMouseButtonReleased(2), .up=IsMouseButtonUp(2) };
+  input.mouse_x = GetMouseX();
+  input.mouse_y = GetMouseY();
+  Vector2 delta = GetMouseDelta();
+  input.delta_x = delta.x;
+  input.delta_y = delta.y;
+  input.scroll = GetMouseWheelMove();
+
+  processInput(isolate, &input);
+}
+
 static char* fslurp(FILE *fp)
 {
   char* source =  NULL;
@@ -145,7 +182,7 @@ int main(int argc, char* argv[])
 
   while (!WindowShouldClose())
   {
-    // process_input(isolate);
+    process_input((long long int)isolate);
     BeginDrawing();
       if (IsWindowFocused())
       {
@@ -162,7 +199,6 @@ int main(int argc, char* argv[])
       ClearBackground(RAYWHITE);
       update((long long int)isolate);
       render((long long int)isolate, (float)lwidth, (float)lheight);
-      DrawFPS(10, 10);
     EndDrawing();
   }
 

@@ -2,7 +2,7 @@
 plugins {
   id "java"
   id "application"
-  id 'org.graalvm.buildtools.native' version '0.9.16'
+  id 'org.graalvm.buildtools.native' version '0.10.6'
 }
 
 repositories {
