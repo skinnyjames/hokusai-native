@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.function.Consumer;
 import com.hokusai.commands.*;
 import com.hokusai.interfaces.ext.*;
+import java.nio.file.Paths;
 
 public class Backend {
   public static Context polyglot;
@@ -23,6 +24,9 @@ public class Backend {
   public static HokusaiNativeImageCommandCallback onDrawImage;
   public static HokusaiNativeScissorBeginCommandCallback onDrawScissorBegin;
   public static HokusaiNativeScissorEndCommandCallback onDrawScissorEnd;
+  public static HokusaiNativeShaderBeginCommandCallback onDrawShaderBegin;
+  public static HokusaiNativeShaderEndCommandCallback onDrawShaderEnd;
+
   public static HashMap<String, Value> keySymbolMap = new HashMap<String, Value>();
   public static String[] keysList = {
     "null", "apostrophe", "comma", "minus", "period",
@@ -149,6 +153,33 @@ public class Backend {
     """).execute(block);
   }
 
+  @CEntryPoint(name = "onDrawShaderBegin")
+  public static void onDrawShaderBegin(@CEntryPoint.IsolateThreadContext long isolate, HokusaiNativeShaderBeginCommandCallback callback) {
+    onDrawShaderBegin = callback;
+    HokusaiNativeShaderBeginCommandWrapper block = new HokusaiNativeShaderBeginCommandWrapper(onDrawShaderBegin);
+    polyglot.eval("ruby", """
+      -> block do
+        wrapper = Java.type("com.hokusai.commands.ShaderBeginCommandWrapper")
+        Hokusai::Commands::ShaderBegin.on_draw do |command|
+          block.call wrapper.new(command)
+        end
+      end
+    """).execute(block);
+  }
+
+  @CEntryPoint(name = "onDrawShaderEnd")
+  public static void onDrawShaderEnd(@CEntryPoint.IsolateThreadContext long isolate, HokusaiNativeShaderEndCommandCallback callback) {
+    onDrawShaderEnd = callback;
+    HokusaiNativeShaderEndCommandWrapper block = new HokusaiNativeShaderEndCommandWrapper(onDrawShaderEnd);
+    polyglot.eval("ruby", """
+      -> block do
+        Hokusai::Commands::ShaderEnd.on_draw do |command|
+          block.call
+        end
+      end
+    """).execute(block);
+  }
+
   @CEntryPoint(name = "onDrawScissorBegin")
   public static void onDrawScissorBegin(@CEntryPoint.IsolateThreadContext long isolate, HokusaiNativeScissorBeginCommandCallback callback) {
     onDrawScissorBegin = callback;
@@ -184,6 +215,9 @@ public class Backend {
   public static void init(@CEntryPoint.IsolateThreadContext long isolate, CCharPointer code) {
     System.out.println("In init");
     String home = System.getenv("HOKUSAI_RUBY_HOME");
+    if (home == null) {
+      home = Paths.get("./truffle").toString();
+    }
 
     System.out.println("Home is " + home);
     System.setProperty("ruby.home", home);
