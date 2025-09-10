@@ -9,13 +9,24 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/**
+ * 
+ *  Declare caches
+ */
 typedef struct TextureCache
 {
   char* key;
   Texture payload;
 } texture_cache;
 
+typedef struct ShaderCache
+{
+  char* key;
+  Shader payload;
+} shader_cache;
+
 static struct hashmap* textures = NULL;
+static struct hashmap* shaders = NULL;
 
 void texture_free(texture_cache* texture)
 {
@@ -36,6 +47,28 @@ uint64_t texture_hash(const void* item, uint64_t seed0, uint64_t seed1)
 	return hashmap_sip(texture->key, strlen(texture->key), seed0, seed1);
 }
 
+void shader_free(shader_cache* shader)
+{
+  free(shader->key);
+  free(shader);
+}
+
+int shader_compare(const void* a, const void* b, void* udata)
+{
+	const shader_cache* prop_a = (shader_cache*) a;
+	const shader_cache* prop_b = (shader_cache*) b;
+	return strcmp(prop_a->key, prop_b->key);
+}
+
+uint64_t shader_hash(const void* item, uint64_t seed0, uint64_t seed1)
+{
+	shader_cache* shader = (shader_cache*) item;
+	return hashmap_sip(shader->key, strlen(shader->key), seed0, seed1);
+}
+
+/**
+ * Start callbacks
+ */
 void on_draw_rect(hokusai_native_rect_command* command)
 {
   Color color = (Color){ .r=command->color->red, .g=command->color->green, .b=command->color->blue, .a=command->color->alpha };
@@ -62,6 +95,64 @@ void on_draw_scissor_begin(hokusai_native_scissor_begin_command* command)
 void on_draw_scissor_end(void)
 {
   EndScissorMode();
+}
+
+void on_draw_shader_begin(hokusai_native_shader_begin_command* command)
+{
+  Shader shad;
+  int len = 0;
+  char* fs = "";
+  char* vs = "";
+  if (command->fragment_shader) 
+  {
+    fs = command->fragment_shader;
+    len += strlen(command->fragment_shader);
+  }
+
+  if (command->vertex_shader) 
+  {
+    vs = command->vertex_shader;
+    len += strlen(command->vertex_shader);
+  }
+
+  char hash[len + 20];
+  sprintf(hash, "%s-%s", fs, vs);
+  const shader_cache* result = hashmap_get(shaders, &(shader_cache){ .key=hash });
+  if (result == NULL)
+  {
+    Shader shader = LoadShaderFromMemory(command->vertex_shader, command->fragment_shader);
+    hashmap_set(shaders, &(shader_cache){ .key=strdup(hash), .payload=shader});
+    shad = shader;
+  }
+  else
+  {
+    shad = result->payload;
+  }
+
+  for (int i=0; i<command->uniforms_size; i++)
+  {
+    hokusai_native_shader_uniform uniform = command->uniforms[i];
+    int loc = GetShaderLocation(shad, uniform.key);
+    if (uniform.type < 4) 
+    {
+      float yo[uniform.dvalue_size];
+      for (int d=0; d<uniform.dvalue_size; d++) {
+        yo[d] = (float)uniform.dvalue[d];
+      }
+      SetShaderValue(shad, loc, yo, uniform.type);
+    }
+    else
+    {
+      SetShaderValue(shad, loc, uniform.ivalue, uniform.type);
+    }
+  }
+
+  BeginShaderMode(shad);
+}
+
+void on_draw_shader_end()
+{
+  EndShaderMode(); 
 }
 
 void on_draw_image(hokusai_native_image_command* command)
@@ -167,6 +258,7 @@ int main(int argc, char* argv[])
   const int screenHeight = 450;
 
   textures = hashmap_new(sizeof(texture_cache), 0, 0, 0, texture_hash, texture_compare, NULL, texture_free);
+  shaders = hashmap_new(sizeof(shader_cache), 0, 0, 0, shader_hash, shader_compare, NULL, shader_free);
 
   init((long long int)isolate, buffer);
   onDrawRect((long long int)isolate, &on_draw_rect);
@@ -174,6 +266,8 @@ int main(int argc, char* argv[])
   onDrawText((long long int)isolate, &on_draw_text);
   onDrawScissorBegin((long long int)isolate, &on_draw_scissor_begin);
   onDrawScissorEnd((long long int) isolate, &on_draw_scissor_end);
+  onDrawShaderBegin((long long int)isolate, &on_draw_shader_begin);
+  onDrawShaderEnd((long long int)isolate, &on_draw_shader_end);
   onDrawImage((long long int)isolate, &on_draw_image);
 
   InitWindow(screenWidth, screenHeight, "Test");
@@ -199,6 +293,7 @@ int main(int argc, char* argv[])
       ClearBackground(RAYWHITE);
       update((long long int)isolate);
       render((long long int)isolate, (float)lwidth, (float)lheight);
+      // DrawFPS(10, 10);
     EndDrawing();
   }
 

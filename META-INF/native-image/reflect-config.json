@@ -12,6 +12,9 @@
 
     { "name": "com.hokusai.commands.CommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
     { "name": "com.hokusai.commands.CircleCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.commands.ShaderBeginCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.commands.ShaderBeginUniform", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.commands.ShaderEndCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
     { "name": "com.hokusai.commands.ScissorBeginCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
     { "name": "com.hokusai.commands.ScissorEndCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
     { "name": "com.hokusai.commands.RectCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
@@ -48,5 +51,14 @@
 
     { "name": "com.hokusai.interfaces.ext.HokusaiNativeScissorEndCommandCallback", "allPublicMethods": true, "allPublicConstructors": true },
     { "name": "com.hokusai.interfaces.ext.HokusaiNativeScissorEndCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
-    { "name": "java.util.function.Consumer", "allPublicMethods": true, "allPublicConstructors": true }
+    { "name": "java.util.function.Consumer", "allPublicMethods": true, "allPublicConstructors": true },
+
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeShaderUniform", "allPublicMethods": true, "allPublicConstructors": true },
+
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeShaderBeginCommand", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeShaderBeginCommandCallback", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeShaderBeginCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
+
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeShaderEndCommandCallback", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeShaderEndCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true }
 ]

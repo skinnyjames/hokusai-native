@@ -4,6 +4,7 @@ import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import com.hokusai.commands.*;
 import java.util.ArrayList;
+import java.nio.file.Paths ;
 
 public class JavaBackend {
   public static ArrayList<CommandWrapper> commands = new ArrayList<CommandWrapper>();
@@ -22,6 +23,11 @@ public class JavaBackend {
   public static void init() {
     String home = System.getenv("HOKUSAI_RUBY_HOME");
 
+    if (home == null)
+    {
+      home = Paths.get("./truffle").toString();
+    }
+
     System.out.println("Home is " + home);
     System.setProperty("ruby.home", home);
     System.setProperty("org.graalvm.language.ruby.home", home);
@@ -39,30 +45,46 @@ public class JavaBackend {
   }
 
   public static void run(String app) {
+    System.out.println("eval the app " + app);
     Value block = polyglot.eval("ruby", app);
     String backend = """
       -> app do
-        
         block = app.mount
         canvas = Hokusai::Canvas.new(400.0, 300.0, 0.0, 0.0)
-
-        ptr = FFI::MemoryPointer.new :pointer
-        LibHokusai.hoku_input_init(ptr)
-        raw = LibHokusai::HmlInput.new(ptr.get_pointer(0))
-        input = Hokusai::Input.new(raw)
-        ptr.free
-
-
+        input = Hokusai::Input.new
         painter = Hokusai::Painter.new(block, input)
-
         painter.render(canvas, false)
       end
     """;
 
+    System.out.println("eval backend?");
     polyglot.eval("ruby", backend).execute(block);
   }
 
   public static void setupHokusaiCallbacks() {
+    System.out.println("Setup callbacks");
+      polyglot.eval("ruby", """
+        -> do
+          wrapper = Java.type("com.hokusai.commands.ShaderBeginCommandWrapper")
+          commands = Polyglot.import("commands")
+
+          Hokusai::Commands::ShaderBegin.on_draw do |command|
+            commands.addLast wrapper.new(command)
+          end
+        end
+      """).execute();
+
+      polyglot.eval("ruby", """
+        -> do
+          wrapper = Java.type("com.hokusai.commands.ShaderEndCommandWrapper")
+          commands = Polyglot.import("commands")
+
+          Hokusai::Commands::ShaderEnd.on_draw do |command|
+            commands.addLast wrapper.new(command)
+          end
+        end
+      """).execute();
+
       polyglot.eval("ruby", """
         -> do
           wrapper = Java.type("com.hokusai.commands.CircleCommandWrapper")
