@@ -37,5 +37,7 @@ public class HokusaiNativeTextCommandWrapper {
     nativeCommand.padding(padding);
 
     this.value.call(nativeCommand);
+
+    holder.close();
   }
 }

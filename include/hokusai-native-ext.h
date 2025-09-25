@@ -135,6 +135,9 @@ typedef void (HokusaiNativeScissorBeginCommandCallback)(struct HokusaiNativeScis
 typedef void (HokusaiNativeScissorEndCommandCallback)(void);
 typedef void (HokusaiNativeShaderBeginCommandCallback)(struct HokusaiNativeShaderBeginCommand* command);
 typedef void (HokusaiNativeShaderEndCommandCallback)(void);
+typedef void (HokusaiNativeFontLoadCallback)(char* name, char* path, int size);
+typedef void (HokusaiNativeFontActivateCallback)(char* name);
+typedef float (HokusaiNativeFontMeasureCallback)(char* text, int text_size, int size);
 
 
 #endif
