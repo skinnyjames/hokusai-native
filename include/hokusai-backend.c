@@ -25,8 +25,63 @@ typedef struct ShaderCache
   Shader payload;
 } shader_cache;
 
+typedef struct FontCache
+{
+  char* key;
+  Font payload;
+  struct hashmap* char_cache;
+} font_cache;
+
+typedef struct MeasureCache
+{
+  char letter;
+  float width;
+} measure_cache;
+
+static char default_chars[122] = "\x1b– —‘’“”…\r\n\t0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%%^&*(),.?/\\[]-_=+|~`{}<>;:\"'";
 static struct hashmap* textures = NULL;
 static struct hashmap* shaders = NULL;
+static struct hashmap* fonts = NULL;
+static Font active_font;
+static char* active_font_key = NULL;
+static double active_scissor[4] = {0.0, 0.0, 0.0, 0.0};
+static int screenWidth;
+static int screenHeight;
+/**
+ * Hashmaps
+ */
+uint64_t char_cache_hash(const void* item, uint64_t seed0, uint64_t seed1)
+{
+	measure_cache* cache = (measure_cache*) item;
+	return hashmap_sip(&(cache->letter), 1, seed0, seed1);
+}
+
+int char_cache_compare(const void* a, const void* b, void* udata)
+{
+  const measure_cache* prop_a = (measure_cache*) a;
+	const measure_cache* prop_b = (measure_cache*) b;
+	return prop_a->letter > prop_b->letter;
+}
+
+void font_free(font_cache* font)
+{
+  free(font->char_cache);
+  free(font->key);
+  free(font);
+}
+
+int font_compare(const void* a, const void* b, void* udata)
+{
+	const font_cache* prop_a = (font_cache*) a;
+	const font_cache* prop_b = (font_cache*) b;
+	return strcmp(prop_a->key, prop_b->key);
+}
+
+uint64_t font_hash(const void* item, uint64_t seed0, uint64_t seed1)
+{
+	font_cache* font = (font_cache*) item;
+	return hashmap_sip(font->key, strlen(font->key), seed0, seed1);
+}
 
 void texture_free(texture_cache* texture)
 {
@@ -66,34 +121,164 @@ uint64_t shader_hash(const void* item, uint64_t seed0, uint64_t seed1)
 	return hashmap_sip(shader->key, strlen(shader->key), seed0, seed1);
 }
 
+bool inside_scissor(double x, double y, double h)
+{
+  if (active_scissor[2] == 0.0) return true;
+  return y + h >= active_scissor[1] && y <= active_scissor[1] + active_scissor[3];
+}
+
 /**
  * Start callbacks
  */
+void on_load_font(char* key, char* path, int size)
+{
+  Font font = LoadFontEx(path, size, NULL, 0);
+  GenTextureMipmaps(&(font.texture));
+  SetTextureFilter(font.texture, TEXTURE_FILTER_BILINEAR);
+  struct hashmap* measured = hashmap_new(sizeof(measure_cache), 0, 0, 0, char_cache_hash, char_cache_compare, NULL, free);
+
+  for (int i=0; i<122; i++)
+  {
+    float w;
+    char letter = default_chars[i];
+    char str[2];
+    sprintf(str, "%c", letter);
+    int bcount;
+    int cp = GetCodepoint(str, &bcount);
+    GlyphInfo info = GetGlyphInfo(font, cp);
+    if (info.advanceX > 0)
+    {
+      w = info.advanceX;
+    }
+    else
+    {
+      w = info.image.width + info.offsetX;
+    }
+
+    hashmap_set(measured, &(measure_cache){ .letter=letter, .width=w});
+  }
+
+  hashmap_set(fonts, &(font_cache){ .key=strdup(key), .payload=font, .char_cache=measured});
+}
+
+void on_activate_font(char* key)
+{
+  font_cache* cached = hashmap_get(fonts, &(font_cache){ .key=key });
+  if (cached == NULL)
+  {
+    perror("no font with that name available");
+    exit(1);
+  }
+
+  if (active_font_key != NULL)
+  {
+    free(active_font_key);
+  }
+
+  active_font = cached->payload;
+  active_font_key = strdup(key);
+}
+
+float on_measure_text(char* text, int text_size, int size)
+{
+  if (active_font_key == NULL)
+  {
+    return 0.0f;
+  }
+  else
+  {
+    float total_width = 0.0f;
+    font_cache* cached = hashmap_get(fonts, &(font_cache){ .key=active_font_key });
+    for (int i=0; i<text_size; i++)
+    {
+      char letter = text[i];
+      measure_cache* measured = hashmap_get(cached->char_cache, &(measure_cache){ .letter=letter });
+      if (measured == NULL)
+      {
+        // measure manually
+        char t[2] = {letter, '\0'};
+        Vector2 vec2 = MeasureTextEx(active_font, t, (float) size, 1.0);
+        total_width += vec2.x;
+      }
+      else
+      {
+        // use cache
+        float w = measured->width;
+        total_width += ((float)size / (float)active_font.baseSize) * w + 1.0;
+      }
+    }
+
+    return total_width;
+  }
+}
+
 void on_draw_rect(hokusai_native_rect_command* command)
 {
+  if (!inside_scissor(command->x, command->y, command->height)) return;
   Color color = (Color){ .r=command->color->red, .g=command->color->green, .b=command->color->blue, .a=command->color->alpha };
   DrawRectangle(command->x, command->y, command->width, command->height, color);
 }
 
 void on_draw_circle(hokusai_native_circle_command* command)
 {
+  if (!inside_scissor(command->x, command->y, command->radius)) return;
   Color color = (Color){ .r=command->color->red, .g=command->color->green, .b=command->color->blue, .a=command->color->alpha };
   DrawCircleV((Vector2){command->x, command->y}, command->radius, color);
 }
 
+static bool activeTexture = false;
+static bool usingTexture = false;
+static RenderTexture2D target;
+
 void on_draw_text(hokusai_native_text_command* command)
 {
+  if (!inside_scissor(command->x, command->y, command->size)){
+    return;
+  }
+  // if (usingTexture){
+  //   return;
+  // }
+
+  // if (!activeTexture)
+  // {
+  //   target = LoadRenderTexture(screenWidth, screenHeight);
+  //   BeginTextureMode(target);
+  //   activeTexture = true;
+  // }
+
   Color color = (Color){ .r=command->color->red, .g=command->color->green, .b=command->color->blue, .a=command->color->alpha };
-  DrawText(command->content, command->x, command->y, command->size, color);
+  DrawTextEx(active_font, command->content, (Vector2){ command->x, command->y }, command->size, 1.0, color);
 }
 
 void on_draw_scissor_begin(hokusai_native_scissor_begin_command* command)
 {
+  active_scissor[0] = command->x;
+  active_scissor[1] = command->y;
+  active_scissor[2] = command->width;
+  active_scissor[3] = command->height;
   BeginScissorMode(command->x, command->y, command->width, command->height);
 }
 
 void on_draw_scissor_end(void)
 {
+  // if (activeTexture)
+  // {
+  //   EndTextureMode();
+  //   usingTexture = true;
+  // }
+
+  // if (usingTexture)
+  // {
+  //   Rectangle src = {0, 0, target.texture.width, -target.texture.height};
+  //   BeginBlendMode(BLEND_ADD_COLORS);
+  //   DrawTextureRec(target.texture,src, (Vector2){0, 0}, WHITE);
+  //   EndBlendMode();
+  // }
+
+  active_scissor[0] = 0.0;
+  active_scissor[1] = 0.0;
+  active_scissor[2] = 0.0;
+  active_scissor[3] = 0.0;
   EndScissorMode();
 }
 
@@ -157,6 +342,7 @@ void on_draw_shader_end()
 
 void on_draw_image(hokusai_native_image_command* command)
 {
+  if (!inside_scissor(command->x, command->y, command->height)) return;
   Texture tex;
   int len = strlen(command->source) + 100; 
   char hash[len];
@@ -254,12 +440,19 @@ int main(int argc, char* argv[])
   char* filename = argv[1];
   FILE* fp = fopen(filename, "r");
   const char* buffer = fslurp(fp);
-  const int screenWidth = 800;
-  const int screenHeight = 450;
+  screenWidth = 800;
+  screenHeight = 450;
 
   textures = hashmap_new(sizeof(texture_cache), 0, 0, 0, texture_hash, texture_compare, NULL, texture_free);
   shaders = hashmap_new(sizeof(shader_cache), 0, 0, 0, shader_hash, shader_compare, NULL, shader_free);
+  fonts = hashmap_new(sizeof(font_cache), 0, 0, 0, font_hash, font_compare, NULL, font_free);
+  InitWindow(screenWidth, screenHeight, "Test");
+  SetWindowState(FLAG_WINDOW_RESIZABLE);
+  SetTargetFPS(60);
 
+  onFontLoad((long long int)isolate, &on_load_font);
+  onFontActivate((long long int)isolate, &on_activate_font);
+  onFontMeasure((long long int)isolate, &on_measure_text);
   init((long long int)isolate, buffer);
   onDrawRect((long long int)isolate, &on_draw_rect);
   onDrawCircle((long long int)isolate, &on_draw_circle);
@@ -269,10 +462,6 @@ int main(int argc, char* argv[])
   onDrawShaderBegin((long long int)isolate, &on_draw_shader_begin);
   onDrawShaderEnd((long long int)isolate, &on_draw_shader_end);
   onDrawImage((long long int)isolate, &on_draw_image);
-
-  InitWindow(screenWidth, screenHeight, "Test");
-  SetWindowState(FLAG_WINDOW_RESIZABLE);
-  SetTargetFPS(60);
 
   while (!WindowShouldClose())
   {
@@ -287,13 +476,13 @@ int main(int argc, char* argv[])
         EnableEventWaiting();
       }
 
-      int lwidth = GetScreenWidth();
-      int lheight = GetScreenHeight();
+      screenWidth = GetScreenWidth();
+      screenHeight = GetScreenHeight();
 
-      ClearBackground(RAYWHITE);
+      ClearBackground(WHITE);
       update((long long int)isolate);
-      render((long long int)isolate, (float)lwidth, (float)lheight);
-      // DrawFPS(10, 10);
+      render((long long int)isolate, (float)screenWidth, (float)screenHeight);
+      DrawFPS(10, 10);
     EndDrawing();
   }
 

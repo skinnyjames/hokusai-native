@@ -60,5 +60,14 @@
     { "name": "com.hokusai.interfaces.ext.HokusaiNativeShaderBeginCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
 
     { "name": "com.hokusai.interfaces.ext.HokusaiNativeShaderEndCommandCallback", "allPublicMethods": true, "allPublicConstructors": true },
-    { "name": "com.hokusai.interfaces.ext.HokusaiNativeShaderEndCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true }
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeShaderEndCommandWrapper", "allPublicMethods": true, "allPublicConstructors": true },
+
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeFontActivateCallback", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeFontActivateWrapper", "allPublicMethods": true, "allPublicConstructors": true },
+    
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeFontLoadCallback", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeFontLoadWrapper", "allPublicMethods": true, "allPublicConstructors": true },
+
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeFontMeasureCallback", "allPublicMethods": true, "allPublicConstructors": true },
+    { "name": "com.hokusai.interfaces.ext.HokusaiNativeFontMeasureWrapper", "allPublicMethods": true, "allPublicConstructors": true }
 ]

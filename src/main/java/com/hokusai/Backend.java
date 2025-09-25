@@ -1,6 +1,7 @@
 package com.hokusai;
 
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 import org.graalvm.nativeimage.c.type.CTypeConversion;
 import org.graalvm.nativeimage.c.function.CEntryPoint;
@@ -8,6 +9,7 @@ import org.graalvm.nativeimage.c.type.CCharPointer;
 import org.graalvm.word.Pointer;
 import org.graalvm.nativeimage.IsolateThread;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.function.Consumer;
 import com.hokusai.commands.*;
@@ -26,6 +28,10 @@ public class Backend {
   public static HokusaiNativeScissorEndCommandCallback onDrawScissorEnd;
   public static HokusaiNativeShaderBeginCommandCallback onDrawShaderBegin;
   public static HokusaiNativeShaderEndCommandCallback onDrawShaderEnd;
+
+  public static HokusaiNativeFontLoadCallback onFontLoad;
+  public static HokusaiNativeFontMeasureCallback onFontMeasure;
+  public static HokusaiNativeFontActivateCallback onFontActivate;
 
   public static HashMap<String, Value> keySymbolMap = new HashMap<String, Value>();
   public static String[] keysList = {
@@ -47,6 +53,21 @@ public class Backend {
     "kp_divide", "kp_multiply", "kp_subtract", "kp_add", "kp_enter", 
     "kp_equal", "back", "menu", "volume_up", "volume_down"
   };
+
+  @CEntryPoint(name = "onFontLoad")
+  public static void onFontLoad(@CEntryPoint.IsolateThreadContext long isolate, HokusaiNativeFontLoadCallback callback) {
+    onFontLoad = callback;
+  }
+
+  @CEntryPoint(name = "onFontMeasure")
+  public static void onFontMeasure(@CEntryPoint.IsolateThreadContext long isolate, HokusaiNativeFontMeasureCallback callback) {
+    onFontMeasure = callback;
+  }
+
+  @CEntryPoint(name = "onFontActivate")
+  public static void onFontActivate(@CEntryPoint.IsolateThreadContext long isolate, HokusaiNativeFontActivateCallback callback) {
+    onFontActivate = callback;
+  }
 
   @CEntryPoint(name = "onDrawRect")
   public static void onDrawRect(@CEntryPoint.IsolateThreadContext long isolate, HokusaiNativeRectCommandCallback callback) {
@@ -108,7 +129,7 @@ public class Backend {
       }
     }
   }
-
+  
   @CEntryPoint(name = "onDrawCircle")
   public static void onDrawCircle(@CEntryPoint.IsolateThreadContext long isolate, HokusaiNativeCircleCommandCallback callback) {
     onDrawCircle = callback;
@@ -212,7 +233,7 @@ public class Backend {
   public static native IsolateThread createIsolate();
 
   @CEntryPoint(name = "init")
-  public static void init(@CEntryPoint.IsolateThreadContext long isolate, CCharPointer code) {
+  public static void init(@CEntryPoint.IsolateThreadContext long isolate, CCharPointer code) throws IOException {
     System.out.println("In init");
     String home = System.getenv("HOKUSAI_RUBY_HOME");
     if (home == null) {
@@ -233,23 +254,91 @@ public class Backend {
 
     System.out.println("callbcks setup");
 
-    String app = CTypeConversion.toJavaString(code);
-
-    System.out.println("app " + app);
-    block = polyglot.eval("ruby", app);
-
     System.out.println("setup input");
     input = polyglot.eval("ruby", """
       Hokusai::Input.new
     """);
 
+    HokusaiNativeFontLoadWrapper loadWrapper = new HokusaiNativeFontLoadWrapper(onFontLoad);
+    HokusaiNativeFontActivateWrapper activateWrapper = new HokusaiNativeFontActivateWrapper(onFontActivate);
+    HokusaiNativeFontMeasureWrapper measureWrapper = new HokusaiNativeFontMeasureWrapper(onFontMeasure);
+
+    polyglot.eval("ruby", """
+      module Hokusai
+        def self.fonts
+          ::Hokusai::Native::Font
+        end
+
+        module Native
+          class Font
+            def self.activate(key)
+              @active_name = key
+
+              @activate_block.call(key)
+            end
+
+            def self.active_font_name
+              @active_name
+            end
+
+            def self.active
+              self
+            end
+
+            def self.measure_char(text, size)
+              @measure_block.call(text, size)
+            end
+
+            def self.measure(text, size)
+              [@measure_block.call(text, size), size]
+            end
+
+            def self.load(key, filename, size)
+              @load_block.call(key, filename, size)
+            end
+
+            def self.on_load(&block)
+              @load_block = block
+            end
+
+            def self.on_activate(&block)
+              @activate_block = block
+            end
+
+            def self.on_measure(&block)
+              @measure_block = block
+            end
+          end
+        end
+      end
+    """);
+
+    polyglot.eval("ruby", """
+      -> (loadFont, activateFont, measureFont) do
+        Hokusai::Native::Font.on_load do |key, filename, size|
+          loadFont.call(key, filename, size)
+        end
+
+        Hokusai::Native::Font.on_activate do |name|
+          activateFont.call(name)
+        end
+
+        Hokusai::Native::Font.on_measure do |text, size|
+          measureFont.call(text, size)
+        end
+      end
+    """).execute(loadWrapper, activateWrapper, measureWrapper);
+
     populateKeys();
+    String app = CTypeConversion.toJavaString(code);
+    block = polyglot.eval("ruby", app);
   }
 
   @CEntryPoint(name = "execute")
-  public static void execute(@CEntryPoint.IsolateThreadContext long isolate, CCharPointer code) {
+  public static void execute(@CEntryPoint.IsolateThreadContext long isolate, CCharPointer code) throws IOException {
     String app = CTypeConversion.toJavaString(code);
-    polyglot.eval("ruby", app);
+    Source source = Source.newBuilder("ruby", app, null).interactive(true).build();
+    polyglot.eval(source);
   }
 
   @CEntryPoint(name = "update")
