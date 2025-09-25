@@ -17,6 +17,22 @@ typedef struct HokusaiNativeBoundary {
   double bottom;
 } hokusai_native_boundary;
 
+typedef struct HokusaiNativeShaderUniform {
+  char* key;
+  int type;
+  double* dvalue;
+  int dvalue_size;
+  int* ivalue;
+  int ivalue_size;
+} hokusai_native_shader_uniform;
+
+typedef struct HokusaiNativeShaderBeginCommand {
+  char* fragment_shader;
+  char* vertex_shader;
+  struct HokusaiNativeShaderUniform* uniforms;
+  int uniforms_size;
+} hokusai_native_shader_begin_command;
+
 typedef struct HokusaiNativeCircleCommand {
   double x;
   double y;
@@ -117,5 +133,8 @@ typedef void (HokusaiNativeImageCommandCallback)(struct HokusaiNativeImageComman
 typedef void (HokusaiNativeTextCommandCallback)(struct HokusaiNativeTextCommand* command);
 typedef void (HokusaiNativeScissorBeginCommandCallback)(struct HokusaiNativeScissorBeginCommand* command);
 typedef void (HokusaiNativeScissorEndCommandCallback)(void);
+typedef void (HokusaiNativeShaderBeginCommandCallback)(struct HokusaiNativeShaderBeginCommand* command);
+typedef void (HokusaiNativeShaderEndCommandCallback)(void);
+
 
 #endif
